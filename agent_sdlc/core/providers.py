@@ -45,3 +45,38 @@ class DummyLLMProvider:
         content = self.responses.get(prompt, self.default)
         metadata = {"prompt": prompt, "timestamp": datetime.utcnow().isoformat()}
         return ProviderResponse(content=content, metadata=metadata)
+
+
+class OpenAIProvider:
+    """Placeholder adapter for OpenAI-like SDKs.
+
+    This class is intentionally a stub so CI/tests do not require the real
+    OpenAI SDK. Projects can replace this implementation with a concrete
+    adapter that calls the OpenAI APIs and returns a `ProviderResponse`.
+    """
+
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key
+
+    def complete(self, prompt: str, **kwargs) -> ProviderResponse:
+        raise ProviderError(
+            "OpenAIProvider is a stub. Replace with a concrete implementation "
+            "that calls the OpenAI SDK or set up a `DummyLLMProvider` for tests."
+        )
+
+
+class AnthropicProvider:
+    """Placeholder adapter for Anthropic-like SDKs.
+
+    As with `OpenAIProvider`, this is a non-networking stub. Swap in a real
+    provider implementation in production code.
+    """
+
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key
+
+    def complete(self, prompt: str, **kwargs) -> ProviderResponse:
+        raise ProviderError(
+            "AnthropicProvider is a stub. Replace with a concrete implementation "
+            "that calls the Anthropic SDK or use `DummyLLMProvider` for tests."
+        )
