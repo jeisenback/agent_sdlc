@@ -8,6 +8,10 @@ on:
 jobs:
   integration:
     name: Integration tests (nightly/manual)
+    # Gate the integration job so it only runs automatically when required secrets are configured,
+    # or when manually dispatched. This prevents running integration tests on forks or when
+    # credentials are missing.
+    if: ${{ secrets.INTEGRATION_CREDENTIAL != '' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     env:
       RUN_INTEGRATION: "1"
