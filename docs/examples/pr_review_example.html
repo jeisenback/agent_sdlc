@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PR Review Example</title>
+    <style>body{font-family:system-ui,Segoe UI,Arial;padding:24px;max-width:900px;margin:auto}pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto}</style>
+  </head>
+  <body>
+    <h1>PR Review Example</h1>
+    <p>This page documents the `pr_review_example.py` script.</p>
+
+    <h2>What it does</h2>
+    <p>Runs the PR review agent with a <code>DummyLLMProvider</code> to produce deterministic findings.</p>
+
+    <h2>How to run</h2>
+    <pre><code>python agent_sdlc/examples/pr_review_example.py</code></pre>
+
+    <h2>Sample output</h2>
+    <pre><code>[
+  {
+    "title": "Use f-strings",
+    "description": "Replace string concatenation with f-strings for readability",
+    "severity": "low"
+  }
+]</code></pre>
+
+    <p>See the script: <a href="https://github.com/jeisenback/agent_sdlc/blob/main/agent_sdlc/examples/pr_review_example.py" target="_blank">pr_review_example.py</a></p>
+  </body>
+</html>
