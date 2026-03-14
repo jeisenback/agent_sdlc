@@ -1,0 +1,13 @@
+[project]
+name = "agent_sdlc"
+version = "0.1.0"
+description = "Agent-assisted SDLC utilities: LLM providers, adapters, and agent primitives."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=1.10",
+  "typing-extensions>=4.0",
+]
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
