@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "An agent-assisted SDLC project generated from agent_sdlc template."
 authors = ["{{author}} <{{author_email}}>"]
 license = "{{license}}"
+repository = "https://github.com/{{github_owner}}/{{project_name}}"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"

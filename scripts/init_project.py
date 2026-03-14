@@ -110,11 +110,13 @@ def main() -> None:
         txt = tpl.read_text(encoding="utf8")
         # minimal templating: replace placeholders
         meta = {
-                "project_name": project_name,
-                "author": args.author,
-                "author_email": args.author_email,
-                "license": args.license,
-            }
+            "project_name": project_name,
+            "author": args.author,
+            "author_email": args.author_email,
+            "license": args.license,
+        }
+        # optional repository owner placeholder
+        meta.setdefault("github_owner", "your-github-org-or-username")
         for k, v in meta.items():
             txt = txt.replace("{{" + k + "}}", v)
         (dest / "pyproject.toml").write_text(txt, encoding="utf8")
