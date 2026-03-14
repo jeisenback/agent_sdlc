@@ -46,6 +46,9 @@ def main() -> None:
     p.add_argument("--out", help="Output parent dir (default: .)", default=".")
     p.add_argument("--include-integration", action="store_true", help="Include integration tests and heavy deps")
     p.add_argument("--force", action="store_true", help="Overwrite existing output directory")
+    p.add_argument("--author", help="Author name to place into templates", default="Your Name")
+    p.add_argument("--author-email", help="Author email to place into templates", default="you@example.com")
+    p.add_argument("--license", help="License identifier to add (MIT)", default="MIT")
     args = p.parse_args()
 
     project_name = args.name
@@ -107,13 +110,22 @@ def main() -> None:
         txt = tpl.read_text(encoding="utf8")
         # minimal templating: replace placeholders
         meta = {
-            "project_name": project_name,
-            "author": "Your Name",
-            "author_email": "you@example.com",
-        }
+                "project_name": project_name,
+                "author": args.author,
+                "author_email": args.author_email,
+                "license": args.license,
+            }
         for k, v in meta.items():
             txt = txt.replace("{{" + k + "}}", v)
         (dest / "pyproject.toml").write_text(txt, encoding="utf8")
+
+    # Render LICENSE if template exists
+    lic_tpl = template_root / "LICENSE.template.MIT"
+    if lic_tpl.exists():
+        lic_txt = lic_tpl.read_text(encoding="utf8")
+        lic_txt = lic_txt.replace("{{year}}", str(__import__("datetime").datetime.now().year))
+        lic_txt = lic_txt.replace("{{author}}", args.author)
+        (dest / "LICENSE").write_text(lic_txt, encoding="utf8")
 
     print(f"Scaffolded project at: {dest}")
     print("Next steps:")
