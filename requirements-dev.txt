@@ -1,0 +1,13 @@
+pytest>=7.0
+pre-commit>=3.0
+ruff>=0.2
+black>=23.0
+isort>=5.0
+
+# Heavy or optional runtime deps used in examples or integration tests
+pandas>=1.5
+numpy>=1.24
+psycopg2-binary>=2.9
+testcontainers>=3.4
+tenacity>=8.0
+yfinance>=0.2
