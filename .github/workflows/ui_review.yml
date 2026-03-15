@@ -1,0 +1,42 @@
+name: UI Design Review
+
+on:
+  pull_request:
+    paths:
+      - "**/*.jsx"
+      - "**/*.tsx"
+      - "**/*.html"
+      - "**/*.css"
+      - "**/*.scss"
+
+jobs:
+  ui-review:
+    name: UI accessibility and consistency review
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Review UI files
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          exit_code=0
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            python scripts/run_ui_design.py --file "$f" || exit_code=1
+          done < <(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(jsx|tsx|html|css|scss)$')
+          exit $exit_code
