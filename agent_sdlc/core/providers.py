@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Optional, Protocol, runtime_checkable
 
@@ -9,8 +9,8 @@ from typing import Any, Dict, Optional, Protocol, runtime_checkable
 @dataclass
 class ProviderResponse:
     content: str
-    metadata: Dict[str, Any] = None
-    usage: Dict[str, Any] = None
+    metadata: Optional[Dict[str, Any]] = field(default=None)
+    usage: Optional[Dict[str, Any]] = field(default=None)
 
 
 class ProviderError(Exception):
@@ -23,7 +23,7 @@ class ProviderRateLimitError(ProviderError):
 
 @runtime_checkable
 class ProviderProtocol(Protocol):
-    def complete(self, prompt: str, **kwargs) -> ProviderResponse: ...
+    def complete(self, prompt: str, **kwargs: Any) -> ProviderResponse: ...
 
 
 class DummyLLMProvider:
@@ -45,7 +45,7 @@ class DummyLLMProvider:
         self.default = default
         self.latency = float(latency)
 
-    def complete(self, prompt: str, **kwargs) -> ProviderResponse:
+    def complete(self, prompt: str, **kwargs: Any) -> ProviderResponse:
         if self.latency and self.latency > 0:
             time.sleep(self.latency)
         content = self.responses.get(prompt, self.default)
@@ -64,7 +64,7 @@ class OpenAIProvider:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key
 
-    def complete(self, prompt: str, **kwargs) -> ProviderResponse:
+    def complete(self, prompt: str, **kwargs: Any) -> ProviderResponse:
         raise ProviderError(
             "OpenAIProvider is a stub. Replace with a concrete implementation "
             "that calls the OpenAI SDK or set up a `DummyLLMProvider` for tests."
@@ -81,7 +81,7 @@ class AnthropicProvider:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key
 
-    def complete(self, prompt: str, **kwargs) -> ProviderResponse:
+    def complete(self, prompt: str, **kwargs: Any) -> ProviderResponse:
         raise ProviderError(
             "AnthropicProvider is a stub. Replace with a concrete implementation "
             "that calls the Anthropic SDK or use `DummyLLMProvider` for tests."
