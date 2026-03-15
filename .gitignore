@@ -7,3 +7,5 @@ build/
 *.egg-info/
 .env
 .claude/
+.coverage
+coverage.xml

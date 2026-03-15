@@ -18,7 +18,7 @@ def _load_anthropic() -> Any:
 _anthropic: Any = _load_anthropic()
 
 
-class AnthropicProvider:
+class AnthropicProvider:  # pragma: no cover
     """Concrete Anthropic provider using the messages API (SDK ≥ 0.20).
 
     Reads ANTHROPIC_API_KEY from the environment when api_key is not supplied.
