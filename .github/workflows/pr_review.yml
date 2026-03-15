@@ -11,6 +11,8 @@ permissions:
 jobs:
   run-pr-review:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,7 +37,7 @@ jobs:
 
       - name: Run PR review agent
         run: |
-          python scripts/pr_review_runner.py --title "${{ github.event.pull_request.title }}" --diff-file pr.diff --pr-number ${{ github.event.number }} --out pr_review_findings.md
+          PYTHONPATH="${PYTHONPATH}:${GITHUB_WORKSPACE}" python scripts/pr_review_runner.py --title "${{ github.event.pull_request.title }}" --diff-file pr.diff --pr-number ${{ github.event.number }} --out pr_review_findings.md
 
       - name: Post findings as PR comment
         uses: peter-evans/create-or-update-comment@v4
