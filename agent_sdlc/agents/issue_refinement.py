@@ -57,7 +57,8 @@ class IssueRefinementAgent:
             f"Issue description:\n{inp.description}\n\n"
             f"Return ONLY a raw JSON array — no markdown fences, no prose. Each element:\n"
             f'{{"location":"body|title|labels|ac","severity":"blocker|warning|suggestion",'
-            f'"rule":"DoR:<rule-id>","message":"<what is wrong>","suggestion":"<how to fix>"}}\n\n'
+            f'"rule":"DoR:<rule-id>","message":"<what is wrong>","suggestion":"<how to fix>"}}\n'
+            f"IMPORTANT: all string values must be valid JSON — escape any double-quotes inside strings as \\\".\n\n"
             f"DoR rules to check:\n"
             f"  DoR:ac-count      — must have at least 2 acceptance criteria (BLOCKER if missing)\n"
             f"  DoR:ac-testable   — each AC must be verifiable/measurable (BLOCKER if vague)\n"

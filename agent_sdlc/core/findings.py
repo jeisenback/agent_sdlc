@@ -66,13 +66,57 @@ def parse_findings_from_json(text: str) -> List[Finding]:
             inner = inner[:-1]
         stripped = "\n".join(inner).strip()
 
-    # Extract the JSON array in case there is leading/trailing prose
+    # Extract the outermost JSON array using bracket-depth matching so that
+    # ']' characters inside string values do not truncate the array early.
     start = stripped.find("[")
-    end = stripped.rfind("]")
-    if start != -1 and end != -1 and end > start:
-        stripped = stripped[start : end + 1]
+    if start != -1:
+        depth = 0
+        in_string = False
+        escape_next = False
+        end = -1
+        for i, ch in enumerate(stripped[start:], start):
+            if escape_next:
+                escape_next = False
+                continue
+            if ch == "\\" and in_string:
+                escape_next = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        if end != -1:
+            stripped = stripped[start : end + 1]
 
-    payload = json.loads(stripped)
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError:
+        # Last-resort: the model produced invalid JSON (e.g. unescaped inner quotes).
+        # Extract individual objects with a regex so we get partial results rather
+        # than crashing entirely.
+        import re
+        import logging
+        logging.getLogger(__name__).warning(
+            "parse_findings_from_json: strict JSON parse failed; attempting object extraction."
+        )
+        # Pull out each {...} block that has at least a "severity" key
+        raw_objects = re.findall(r'\{[^{}]+\}', stripped)
+        payload = []
+        for obj in raw_objects:
+            try:
+                payload.append(json.loads(obj))
+            except json.JSONDecodeError:
+                continue
+        if not payload:
+            return []
     return [_make_finding(item) for item in payload]
 
 

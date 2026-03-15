@@ -37,6 +37,9 @@ def _run(cmd: list[str], check: bool = True) -> str:
     return result.stdout.strip()
 
 
+_BODY_CHAR_LIMIT = 3000  # keep prompts short enough for reliable JSON responses
+
+
 def _fetch_issue(issue_number: int) -> IssueInput:
     logger.info("Fetching issue #%d via gh CLI...", issue_number)
     meta_json = _run([
@@ -44,9 +47,12 @@ def _fetch_issue(issue_number: int) -> IssueInput:
         "--json", "number,title,body,labels,milestone,assignees,state",
     ])
     meta = json.loads(meta_json)
+    body = meta.get("body") or ""
+    if len(body) > _BODY_CHAR_LIMIT:
+        body = body[:_BODY_CHAR_LIMIT] + "\n...[truncated for DoR check]"
     return IssueInput(
         title=meta["title"],
-        description=meta.get("body") or "",
+        description=body,
     )
 
 

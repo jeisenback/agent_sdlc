@@ -155,3 +155,58 @@ These enhancement items are lower priority than Phase 1–4 but important for lo
 48. **SprintHealthReporter** — weekly scheduled job: counts open blockers across
     milestone issues, flags stale issues (no activity > 7 days), posts summary to
     a pinned GitHub issue. Uses `gh` CLI; no LLM required.
+
+## Phase 9 — Agent Governance Layer
+
+This phase introduces meta-agents that manage, coordinate, and quality-gate the
+agent system itself. Build order within Sprint 2 matters: infrastructure first,
+then the review agent (used to validate everything built after it), then core agents.
+
+### Sprint 2 — governance infrastructure (build in this order)
+49. **FindingAggregator** (move from Phase 8 / Sprint 6) — required by the pipeline
+    orchestrator on day one. Merges Finding lists from multiple agents, deduplicates,
+    resolves severity conflicts, produces one unified PR/issue comment.
+    No LLM required — deterministic. `agents/finding_aggregator.py`.
+50. **Pipeline Orchestrator** — YAML config (`.agent-pipeline.yml`) that maps triggers
+    to agent sequences (parallel or sequential). Runner `scripts/run_pipeline.py`
+    reads the config and executes agents, routing all output through FindingAggregator
+    into a single comment. No LLM required. Handles agent failures per config
+    (`on_failure: continue|abort`).
+51. **Agent Review Agent — individual mode** (`agents/agent_review.py`, mode=individual)
+    — reviews a single agent's source code, prompt string, test file, and CI trigger
+    for: prompt quality, pattern compliance (ProviderProtocol, Finding schema, retry),
+    test coverage of each BLOCKER rule, `__all__` export. BLOCKER findings block the
+    PR that introduces the agent. Applied to every Sprint 2+ agent before it ships.
+    Rules namespace: `AgentReview:`.
+52. **Reasoning Check Agent** (`agents/reasoning_check.py`) — scaffold Sprint 2,
+    activate Sprint 3 (requires real LLM). Triggers when: upstream agent produces ≥1
+    BLOCKER finding, issue labelled `planning`, or detected agent error/miscommunication.
+    Takes original artifact + upstream findings; verifies each finding's logic is sound,
+    severity is justified, and no obvious findings are missing. May downgrade or remove
+    hallucinated BLOCKERs. BLOCKER from ReasoningCheck blocks merge.
+    Rules namespace: `Reason:`.
+
+### Sprint 3 — governance with real LLM
+53. **Routing Orchestrator** — LLM-driven extension of the Pipeline Orchestrator.
+    Given event context (what changed, what label, what triggered), decides dynamically
+    which agents to invoke and in what order. Falls back to YAML pipeline config when
+    LLM unavailable. `agents/routing_orchestrator.py`.
+54. **Agent Review Agent — system-level mode** (extend task 51, mode=system) — given
+    the full agent catalog (all agent source + prompts), checks for: overlapping rules
+    at conflicting severities, gaps in coverage, missing integration points, inconsistent
+    naming across namespaces, agents with no CI trigger. Posts a system health report
+    to the Sprint Health Dashboard issue. Runs weekly.
+
+### Sprint 4 — meta-agents (patterns stable)
+55. **New Agent Agent** (`agents/new_agent.py`) — given a description of desired agent
+    behaviour, generates scaffolded files: agent.py, runner script, unit tests, CI
+    trigger snippet, pipeline YAML entry. Validates output against AgentReviewAgent
+    (individual) rules before returning. Patterns must be stable from Sprint 2+3 first.
+56. **Agent Conflict Resolver** (`agents/conflict_resolver.py`) — given findings from
+    multiple agents on the same artifact, detects contradictions (same rule, different
+    severity) and duplicates (same meaning, different rule ID). Produces adjudicated
+    finding set. Feeds into FindingAggregator as a pre-processing step.
+57. **Agent Health Monitor** — tracks agent output quality over time: how often BLOCKER
+    findings are acted on vs dismissed, which rules are chronic false positives, which
+    agents have the highest dismiss rate. Analyses GitHub issue/PR history via `gh`.
+    No LLM required. Weekly report to Sprint Health Dashboard.
