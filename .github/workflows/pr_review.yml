@@ -40,7 +40,7 @@ jobs:
           PYTHONPATH="${PYTHONPATH}:${GITHUB_WORKSPACE}" python scripts/pr_review_runner.py --title "${{ github.event.pull_request.title }}" --diff-file pr.diff --pr-number ${{ github.event.number }} --out pr_review_findings.md
 
       - name: Post findings as PR comment
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.number }}
