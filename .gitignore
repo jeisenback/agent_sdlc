@@ -6,6 +6,6 @@ dist/
 build/
 *.egg-info/
 .env
-.claude/
+.claude/settings.local.json
 .coverage
 coverage.xml
