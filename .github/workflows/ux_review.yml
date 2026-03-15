@@ -1,0 +1,44 @@
+name: UX Review
+
+on:
+  pull_request:
+    paths:
+      - "docs/flows/**"
+      - "specs/**"
+  issues:
+    types: [labeled]
+
+jobs:
+  ux-review:
+    name: UX flow review
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issues' && github.event.label.name == 'ux-review')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Review flow files
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          exit_code=0
+          for f in docs/flows/*.md specs/*.md 2>/dev/null; do
+            [ -f "$f" ] || continue
+            python scripts/run_ux.py --flow-file "$f" --goal "Complete user goal" || exit_code=1
+          done
+          exit $exit_code
