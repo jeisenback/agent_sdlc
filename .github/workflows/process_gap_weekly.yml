@@ -1,0 +1,45 @@
+name: Weekly Process Gap Analysis
+
+on:
+  schedule:
+    # Runs every Monday at 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      dashboard_issue:
+        description: "Issue number for the Process Health Dashboard"
+        required: false
+        default: ""
+
+jobs:
+  workflow-gap:
+    name: Workflow gap analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Run workflow gap analysis
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          DASHBOARD="${{ github.event.inputs.dashboard_issue }}"
+          if [ -n "$DASHBOARD" ]; then
+            python scripts/run_process_gap.py --mode workflow --post-report "$DASHBOARD"
+          else
+            python scripts/run_process_gap.py --mode workflow
+          fi
