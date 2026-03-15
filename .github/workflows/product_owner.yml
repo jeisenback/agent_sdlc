@@ -1,0 +1,40 @@
+name: Product Owner Review
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  po-review:
+    name: PO strategic review
+    runs-on: ubuntu-latest
+    if: |
+      github.event.action == 'opened' ||
+      (github.event.action == 'labeled' &&
+       (github.event.label.name == 'needs-po-review' ||
+        github.event.label.name == 'feature'))
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Run PO review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/run_product_owner.py \
+            --issue ${{ github.event.issue.number }} \
+            --post-comment
