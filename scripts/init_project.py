@@ -12,8 +12,6 @@ import argparse
 import shutil
 from pathlib import Path
 from typing import Iterable
-import json
-
 
 TEMPLATE_PYPROJECT = "pyproject.template.toml"
 

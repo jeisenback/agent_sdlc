@@ -5,7 +5,7 @@ import pytest
 def test_anthropic_provider_optional():
     # Skip if anthropic SDK not installed or no API key provided
     try:
-        import anthropic  # type: ignore
+        import anthropic  # type: ignore  # noqa: F401
     except Exception:
         pytest.skip("anthropic SDK not installed")
 

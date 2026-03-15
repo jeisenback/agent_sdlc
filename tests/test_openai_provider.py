@@ -5,7 +5,7 @@ import pytest
 def test_openai_provider_optional():
     # Skip if openai SDK not installed or no API key provided
     try:
-        import openai  # type: ignore
+        import openai  # type: ignore  # noqa: F401
     except Exception:
         pytest.skip("openai SDK not installed")
 

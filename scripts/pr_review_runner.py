@@ -29,7 +29,7 @@ def _findings_from_diff(diff: str) -> List[Finding]:
     findings: List[Finding] = []
     lines = diff.splitlines()
 
-    todos = [(i + 1, l) for i, l in enumerate(lines) if "TODO" in l or "FIXME" in l]
+    todos = [(i + 1, ln) for i, ln in enumerate(lines) if "TODO" in ln or "FIXME" in ln]
     for lineno, line in todos[:5]:
         findings.append(
             Finding(
@@ -41,7 +41,7 @@ def _findings_from_diff(diff: str) -> List[Finding]:
             )
         )
 
-    deleted = [l for l in lines if l.startswith("-") and not l.startswith("---")]
+    deleted = [ln for ln in lines if ln.startswith("-") and not ln.startswith("---")]
     if len(deleted) > 50:
         findings.append(
             Finding(

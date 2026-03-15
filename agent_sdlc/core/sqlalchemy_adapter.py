@@ -10,7 +10,7 @@ except Exception:  # pragma: no cover - optional dependency
     text = None
     Engine = object  # type: ignore
 
-from .db import DBAdapter
+from .db import DBAdapter  # noqa: F401  re-exported for adapter consumers
 
 
 class SqlAlchemyAdapter:

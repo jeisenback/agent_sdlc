@@ -23,7 +23,7 @@ def with_retry(
             while True:
                 try:
                     return func(*args, **kwargs)
-                except retry_on as exc:
+                except retry_on:
                     attempt += 1
                     if attempt >= max_attempts:
                         raise
