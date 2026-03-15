@@ -45,9 +45,12 @@ class Finding(BaseModel):
 
 def _make_finding(item: Dict[str, Any]) -> Finding:
     """Construct a Finding from a raw dict, compatible with pydantic v1 and v2."""
-    if hasattr(Finding, "model_validate"):
-        return Finding.model_validate(item)
-    return Finding(**item)  # pydantic v1 compat
+    validator = getattr(Finding, "model_validate", None) or getattr(
+        Finding, "parse_obj", None
+    )
+    result = validator(item) if validator else Finding(**item)
+    assert isinstance(result, Finding)
+    return result
 
 
 def parse_findings_from_json(text: str) -> List[Finding]:
