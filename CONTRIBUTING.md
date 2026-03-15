@@ -33,6 +33,26 @@ Code style
 - We use `black`, `isort`, and `ruff` via `pre-commit`. Hooks are configured in `.pre-commit-config.yaml`.
 - Run `pre-commit run --all-files` to check formatting locally.
 
+Commit message format
+
+All commit messages must follow the Conventional Commits format:
+
+```
+<type>(<scope>): <description>
+```
+
+Valid types: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`
+
+Scope is optional. Examples:
+
+```
+feat(agents): add IssueRefinementAgent
+fix: handle empty diff in PRReviewAgent
+chore(ci): pin ruff version
+```
+
+A `commit-msg` pre-commit hook enforces this automatically. If your commit is rejected, check the error message for the expected format. The hook runs `scripts/check_commit_msg.sh` which validates against the pattern `^(feat|fix|test|refactor|docs|chore)(\(.+\))?: .+`.
+
 Provider adapters
 
 - Use `DummyLLMProvider` for deterministic tests. Replace the stub classes in
