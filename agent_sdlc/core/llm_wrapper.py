@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from agent_sdlc.core.providers import ProviderProtocol, ProviderResponse
 from agent_sdlc.core.retry import with_retry
@@ -21,7 +21,7 @@ class LLMWrapper:
         return self.provider.complete(prompt, **kwargs)
 
     def ask_text(self, prompt: str, **kwargs: Any) -> str:
-        return self.ask(prompt, **kwargs).content
+        return cast(ProviderResponse, self.ask(prompt, **kwargs)).content
 
 
 __all__ = ["LLMWrapper"]

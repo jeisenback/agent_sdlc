@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -43,11 +43,14 @@ class Finding(BaseModel):
     suggestion: Optional[str] = None
 
 
-def _make_finding(item: dict) -> Finding:
+def _make_finding(item: Dict[str, Any]) -> Finding:
     """Construct a Finding from a raw dict, compatible with pydantic v1 and v2."""
-    if hasattr(Finding, "model_validate"):
-        return Finding.model_validate(item)
-    return Finding.parse_obj(item)  # type: ignore[attr-defined]
+    validator = getattr(Finding, "model_validate", None) or getattr(
+        Finding, "parse_obj", None
+    )
+    result = validator(item) if validator else Finding(**item)
+    assert isinstance(result, Finding)
+    return result
 
 
 def parse_findings_from_json(text: str) -> List[Finding]:

@@ -6,9 +6,9 @@ from typing import Any, Dict, Optional
 from .providers import ProviderError, ProviderResponse
 
 try:
-    import openai  # type: ignore
+    import openai
 except Exception:  # pragma: no cover - optional dependency
-    openai = None  # type: ignore
+    openai = None
 
 
 class OpenAIProviderReal:
@@ -52,12 +52,15 @@ class OpenAIProviderReal:
             raise ProviderError(f"OpenAI API error: {e}")
 
         metadata: Dict[str, Any] = {"model": self.model}
+        usage: Optional[Dict[str, Any]] = None
         try:
-            usage = (
+            raw = (
                 getattr(resp, "usage", None) or resp.get("usage")
                 if isinstance(resp, dict)
-                else None
+                else getattr(resp, "usage", None)
             )
+            if isinstance(raw, dict):
+                usage = raw
         except Exception:
             usage = None
 

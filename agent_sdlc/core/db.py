@@ -3,20 +3,22 @@ from __future__ import annotations
 import sqlite3
 import threading
 from contextlib import contextmanager
-from typing import ContextManager, Iterable, List, Optional, Protocol, Tuple
+from typing import Any, Generator, Iterable, List, Optional, Protocol, Tuple
 
 
 class DBAdapter(Protocol):
     def connect(self) -> None: ...
 
-    def execute(self, sql: str, params: Optional[Iterable] = None) -> int: ...
+    def execute(self, sql: str, params: Optional[Iterable[Any]] = None) -> int: ...
 
-    def fetchall(self, sql: str, params: Optional[Iterable] = None) -> List[Tuple]: ...
+    def fetchall(
+        self, sql: str, params: Optional[Iterable[Any]] = None
+    ) -> List[Tuple[Any, ...]]: ...
 
     def close(self) -> None: ...
 
     @contextmanager
-    def transaction(self) -> ContextManager: ...
+    def transaction(self) -> Generator[None, None, None]: ...
 
 
 class SqliteAdapter:
@@ -39,16 +41,20 @@ class SqliteAdapter:
             )
             self._conn.row_factory = sqlite3.Row
 
-    def execute(self, sql: str, params: Optional[Iterable] = None) -> int:
+    def execute(self, sql: str, params: Optional[Iterable[Any]] = None) -> int:
         self.connect()
+        assert self._conn is not None
         with self._lock:
             cur = self._conn.cursor()
             cur.execute(sql, tuple(params) if params else ())
             self._conn.commit()
             return cur.rowcount
 
-    def fetchall(self, sql: str, params: Optional[Iterable] = None) -> List[Tuple]:
+    def fetchall(
+        self, sql: str, params: Optional[Iterable[Any]] = None
+    ) -> List[Tuple[Any, ...]]:
         self.connect()
+        assert self._conn is not None
         with self._lock:
             cur = self._conn.cursor()
             cur.execute(sql, tuple(params) if params else ())
@@ -56,8 +62,9 @@ class SqliteAdapter:
             return [tuple(r) for r in rows]
 
     @contextmanager
-    def transaction(self):
+    def transaction(self) -> Generator[None, None, None]:
         self.connect()
+        assert self._conn is not None
         with self._lock:
             try:
                 yield

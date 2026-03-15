@@ -5,10 +5,17 @@ from typing import Any, Optional
 
 from .providers import ProviderError, ProviderResponse
 
-try:
-    import anthropic  # type: ignore
-except Exception:  # pragma: no cover - optional dependency
-    anthropic = None  # type: ignore
+
+def _load_anthropic() -> Any:
+    try:
+        import anthropic
+
+        return anthropic
+    except Exception:  # pragma: no cover - optional dependency
+        return None
+
+
+_anthropic: Any = _load_anthropic()
 
 
 class AnthropicProvider:
@@ -26,14 +33,14 @@ class AnthropicProvider:
         max_tokens: int = 4096,
         **kwargs: Any,
     ) -> None:
-        if anthropic is None:
+        if _anthropic is None:
             raise RuntimeError(
-                "anthropic package is not installed. " "Run: pip install anthropic"
+                "anthropic package is not installed. Run: pip install anthropic"
             )
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise RuntimeError("ANTHROPIC_API_KEY not set and no api_key provided.")
-        self.client = anthropic.Anthropic(api_key=self.api_key)
+        self.client: Any = _anthropic.Anthropic(api_key=self.api_key)
         self.model = model
         self.max_tokens = max_tokens
 
@@ -47,7 +54,9 @@ class AnthropicProvider:
         except Exception as exc:
             raise ProviderError(f"Anthropic API error: {exc}") from exc
 
-        content = resp.content[0].text if resp.content else ""
+        # Filter to text blocks only; other block types (tool use, thinking, etc.)
+        # do not carry a .text attribute.
+        content: str = next((b.text for b in resp.content if hasattr(b, "text")), "")
         usage = {
             "input_tokens": resp.usage.input_tokens,
             "output_tokens": resp.usage.output_tokens,

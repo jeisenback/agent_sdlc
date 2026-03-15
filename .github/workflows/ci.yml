@@ -44,6 +44,9 @@ jobs:
       - name: Import order (isort)
         run: isort --check-only .
 
+      - name: Type check (mypy)
+        run: mypy --strict --ignore-missing-imports agent_sdlc/
+
       - name: Run tests
         run: python -m pytest -q
 
