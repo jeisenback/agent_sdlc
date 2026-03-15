@@ -9,5 +9,6 @@ pandas>=1.5
 numpy>=1.24
 psycopg2-binary>=2.9
 testcontainers>=3.4
+SQLAlchemy>=1.4
 tenacity>=8.0
 yfinance>=0.2

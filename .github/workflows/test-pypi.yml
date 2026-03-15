@@ -1,0 +1,41 @@
+name: TestPyPI Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Set to true to actually publish to TestPyPI'
+        required: true
+        default: 'false'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Build distribution
+        run: |
+          python -m pip install --upgrade pip setuptools wheel build
+          python -m build --sdist --wheel
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+      - name: Publish to TestPyPI
+        if: ${{ github.event.inputs.publish == 'true' }}
+        env:
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        run: |
+          python -m pip install --upgrade pip twine
+          python -m twine upload --repository testpypi dist/*

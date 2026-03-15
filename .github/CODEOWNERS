@@ -1,0 +1,8 @@
+# CODEOWNERS for agent_sdlc
+# Reviewers listed here will be requested for PRs touching the matching paths.
+
+# Default owners for everything
+* @jeisenback
+
+# Docs ownership
+/docs/ @jeisenback

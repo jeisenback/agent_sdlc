@@ -8,6 +8,10 @@ on:
 jobs:
   e2e:
     name: End-to-end tests (manual/nightly)
+    # Gate the e2e job so it only runs automatically when required secrets are configured,
+    # or when manually dispatched. This prevents running heavy e2e tests on forks or when
+    # credentials are missing.
+    if: ${{ secrets.E2E_CREDENTIAL != '' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     env:
       RUN_E2E: "1"
