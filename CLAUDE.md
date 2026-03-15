@@ -8,29 +8,38 @@
 
 ## Project Context
 
-`agent_sdlc` is a lightweight Python library that extracts reusable agent-assisted SDLC
-primitives: LLM provider abstractions, retry utilities, and database adapters. It is
-designed so teams can run fast offline unit tests and swap in production adapters with
-zero code changes.
+`agent_sdlc` is a Python library of reusable agent-assisted SDLC primitives: LLM provider
+abstractions, retry utilities, database adapters, and a growing catalog of review and
+governance agents. It is designed so teams can run fast offline unit tests and swap in
+production adapters with zero code changes.
 
-The package is a 4-component architecture:
+**4-component core architecture:**
 - `agent_sdlc.core` — retry, logging, types, DB adapter interfaces
 - `agent_sdlc.core.llm` — ProviderProtocol + DummyLLMProvider + concrete providers
 - `agent_sdlc.agents` — pluggable agents accepting injected provider & adapter
 - `agent_sdlc.adapters` — SqliteAdapter, SqlAlchemyAdapter, optional external adapters
 
-Phases: Phase 1 (bootstrap) → Phase 2 (core extraction) → Phase 3 (agent refactor & tests) → Phase 4 (integration & polishing).
+**Agent governance layer** (Phase 9+):
+- Pipeline Orchestrator — YAML-driven multi-agent coordination (`.agent-pipeline.yml`)
+- FindingAggregator — unified output from multiple agents
+- AgentReviewAgent — quality gate for new agents before they ship
+- ReasoningCheckAgent — verifies BLOCKER findings before they block work
+- RoutingOrchestrator — LLM-driven dynamic agent selection (Sprint 3+)
+
+For the full agent catalog and pipeline wiring, see: `docs/agents.md` and `.agent-pipeline.yml`.
+For multi-agent context and handoff protocol, see: `pipeline_context.md`.
 
 ---
 
 ## Session Startup (Do This Every Time — In Order)
 
 ```
-1. Read TASKS.md        → find active phase, current task, blockers
-2. Read DESIGN.md       → confirm module boundaries, public API, CI strategy
-3. Read REQUIREMENTS.md → confirm acceptance criteria for the task you are working
-4. git status           → confirm branch, confirm clean state
-5. pytest -q            → must pass before writing any code
+1. Read TASKS.md              → find active phase, current task, blockers
+2. Read DESIGN.md             → confirm module boundaries, public API, CI strategy
+3. Read REQUIREMENTS.md       → confirm acceptance criteria for the task you are working
+4. Read .agent-pipeline.yml   → understand what is currently wired (if touching agents or CI)
+5. git status                 → confirm branch, confirm clean state
+6. pytest -q                  → must pass before writing any code
 ```
 
 If no task is clearly active in `TASKS.md`: do not start work. Ask the human lead what to
@@ -44,7 +53,7 @@ You implement within the scope of a clearly defined task. You explain before lar
 You ask when uncertain about architecture, dependencies, or scope.
 
 **Human lead owns:** architecture decisions, merging PRs, adding dependencies, phase
-boundaries, scope changes, any irreversible operation.
+boundaries, scope changes, any irreversible operation, agent lifecycle approval.
 
 **You own:** implementation within the task, tests for your own code, code quality,
 doc updates in scope, commit authorship.
@@ -68,6 +77,9 @@ When uncertain about scope, ask before writing code.
 | Commits | Author commit messages in correct format | — |
 | Branch work | Work within the current task's branch | Open a branch for a different task |
 | Error handling | `try/except` with logging | Swallow exceptions silently |
+| **Agent lifecycle** | Run AgentReviewAgent on a new agent | **Ship a new agent without AgentReviewAgent passing** |
+| **Pipeline wiring** | Add an agent entry to `.agent-pipeline.yml` | Create a standalone CI trigger outside the pipeline |
+| **Rule namespaces** | Use an existing namespace (e.g. `DoR:`, `PO:`) | Introduce a new namespace without checking for collisions |
 
 **When in doubt:** explain what you're about to do and ask. Waiting costs less than rework.
 
@@ -84,6 +96,8 @@ Before writing or editing any source file:
 [ ] Test suite passes locally: pytest -q
 [ ] Branch name follows convention; branch exists and is clean
 [ ] You have READ any file you are about to edit (never modify a file you haven't read)
+[ ] If adding a new agent → AgentReviewAgent will be run on it before the PR is opened
+[ ] If adding a new CI trigger → it is wired through .agent-pipeline.yml, not standalone
 ```
 
 ---
@@ -118,6 +132,15 @@ FUNCTIONS < 200 lines                                            ← prefer comp
 PYTHON 3.10+                                                     ← no language features that break 3.10 compatibility
 ```
 
+**Agent-specific standards:**
+```
+ALL new agents export __all__                                    ← [AgentClass, InputModel, ResultModel]
+ALL new agents have one unit test per BLOCKER rule               ← DummyLLMProvider, asserts approved=False
+ALL new agents wired into .agent-pipeline.yml                    ← no standalone CI triggers
+ALL result models gate on BLOCKER findings                       ← approved/ready/passed = no BLOCKERs present
+ALL finding rule IDs use the agent's namespace prefix            ← e.g. DoR:, PO:, UX:, AgentReview:
+```
+
 ---
 
 ## Session End Protocol
@@ -133,6 +156,7 @@ Do this at the end of **every** session, before closing your terminal:
 4. Push branch to remote:
    git push origin <your-branch>
 5. If work is complete and all AC met:
+   - Run AgentReviewAgent on any new agent files before opening the PR
    - Open PR with a clear description of what was done and which REQUIREMENTS.md items are satisfied
    - Note any follow-on tasks that became visible during the work
 ```
@@ -156,6 +180,10 @@ NEVER  change a public function signature outside the explicit scope of the task
 NEVER  store secrets, API keys, or tokens in code, tests, or committed config
 NEVER  make network calls in unit tests (use DummyLLMProvider + SqliteAdapter)
 NEVER  silently swallow exceptions — log and surface them
+NEVER  ship a new agent without AgentReviewAgent (individual) passing zero BLOCKERs
+NEVER  create a standalone CI trigger for a new agent — wire it into .agent-pipeline.yml
+NEVER  introduce a new rule namespace without first checking for collisions via AgentReview:sys:namespace-collision
+NEVER  hardcode a BLOCKER severity in a new agent without a corresponding unit test asserting approved=False
 ```
 
 ---
@@ -167,11 +195,15 @@ NEVER  silently swallow exceptions — log and surface them
 | Active phase, current task, blockers | `TASKS.md` ← **read first** |
 | Module boundaries, public API, CI strategy | `DESIGN.md` |
 | Functional + non-functional requirements, AC | `REQUIREMENTS.md` |
-| Liveness/health probe design | `heartbeat.md` |
-| Session lifecycle and context management | `session.md` |
+| Agent catalog — all agents, inputs, outputs, rules | `docs/agents.md` (Sprint 5) / GitHub issues until then |
+| Pipeline wiring — what triggers what | `.agent-pipeline.yml` |
+| Multi-agent context and handoff protocol | `pipeline_context.md` |
+| Liveness/health probe design (provider + DB) | `heartbeat.md` |
+| Agent output quality metrics and health | `docs/agent_health.md` (Sprint 4) |
+| Single-agent session lifecycle | `session.md` |
 | LLM provider abstraction and retry usage | `agent_sdlc/core/providers.py`, `agent_sdlc/core/retry.py` |
 | DB adapter interface and implementations | `agent_sdlc/core/db.py` |
+| Finding schema shared by all agents | `agent_sdlc/core/findings.py` |
 | Unit tests | `tests/` |
-| Claude provider integration guidance | `CLAUDE.md` (this file) |
 | Copilot usage and coding style | `copilot_instructions.md` |
 | Run unit tests | `pytest -q` |
