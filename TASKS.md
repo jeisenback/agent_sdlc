@@ -68,3 +68,38 @@ then update `requirements-dev.txt` and the bootstrap script.
 26. Add a CHANGELOG template, release checklists, and `scripts/release.py` to automate common release tasks.
 
 These enhancement items are lower priority than Phase 1–4 but important for long-term maintainability and adoption.
+
+## Phase 7 — Workflow quality enhancements
+
+### Pre-commit / CI gates
+27. Add `mypy --strict` to pre-commit hooks and CI matrix — enforces the type-hints
+    requirement from CLAUDE.md. Gate: CI fails on any type error.
+28. Add `pytest-cov` coverage gate (≥80%) to CI — a PR that deletes tests should fail.
+    Use `--cov=agent_sdlc --cov-fail-under=80` in the test step.
+29. Add a commit-message linter pre-commit hook (local hook, no extra package) that
+    validates the `<type>(<scope>): <description>` format from CLAUDE.md Git Rules.
+
+### Agents
+30. **Architecture review agent** (`agents/arch_review.py`) — triggered by CI on any
+    change under `agent_sdlc/`. Checks: no direct SDK import in agents, all public
+    functions have type hints, new modules export `__all__`, no cross-agent imports.
+    Produces `Finding` list; blockers fail CI.
+31. **Assumption checker agent** (`agents/assumption_checker.py`) — runs on PR CI.
+    Extracts implicit assumptions from PR title+description+diff and flags unverified
+    ones as WARNINGs. Output posted as a separate PR comment section.
+32. **Root cause analysis agent** (`agents/rca.py`) — triggered on issues labelled
+    `bug`. Structured prompt: symptom → probable cause → fix options → recommendation.
+    Runner: `scripts/run_rca.py`. Posts RCA comment to the issue via `gh`.
+
+### Claude skills (slash commands)
+33. `/review-pr` skill — runs `PRReviewAgent` against the current branch diff locally,
+    prints blocker/warning/suggestion breakdown, exits 1 on blockers. File:
+    `.claude/skills/review-pr.md`.
+34. `/refine-issue` skill — fetches a GitHub issue via `gh issue view`, runs
+    `IssueRefinementAgent`, prints DoR findings. File: `.claude/skills/refine-issue.md`.
+
+### Documentation
+35. Add `docs/agents.md` — full agent reference: inputs, outputs, severity meanings,
+    how to invoke locally vs CI.
+36. Add `AGENTS.md` at repo root — one-pager for contributors: which agents exist,
+    what they check, how to run them before opening a PR.
