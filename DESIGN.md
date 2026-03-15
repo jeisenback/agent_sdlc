@@ -9,6 +9,14 @@
 - Offer DB adapters with a lightweight sqlite fallback and a `SqlAlchemyAdapter` for production.
 - Keep CI fast by running unit tests with dummy providers and gated integration runs (Docker/testcontainers) for heavy dependencies.
 
+## AI-assisted workflow
+
+- Human role: provide direction, prioritise work, and make high-level architecture or security decisions.
+- AI role: implement, test, refactor, and maintain routine code changes (agents, adapters, CI), using injected providers and adapters.
+- Automation: CI (GitHub Actions) runs tests and linters; agents can open PRs, run local demos, and update docs automatically.
+
+The project is structured so that AI tools (Copilot, Claude, or other agents) can perform most implementation tasks given human oversight.
+
 ## Non-goals
 - Not publishing opinionated orchestration or runtime environments. This package focuses on primitives and adapters.
 
@@ -29,6 +37,26 @@
 ## CI Strategy
 - Unit tests: run with `DummyLLMProvider` + `SqliteAdapter` (fast). Execute on PRs.
 - Integration tests: use `testcontainers.postgres` + real providers (optional API keys). Run only on main/nightly or gated workflows.
+
+- Continuous workflow: GitHub Actions runs tests + minimal lint on PRs. A nightly workflow can run heavier integration tests.
+
+Compatibility note: pinning `pydantic` to `<2` keeps a stable API surface for generated code and tests; a migration plan will be scheduled to adopt Pydantic v2 features.
+
+## Template & Bootstrapping
+
+- The repository will act as a project template. A generator (`scripts/init_project.py`) or a `scripts/bootstrap` script should create a new project from this template, producing:
+	- `pyproject.toml` / `requirements.txt` adjusted for the new package name
+	- `.github/workflows/ci.yml` minimal CI for unit tests
+	- `README.md` with quickstart and bootstrap instructions
+	- example agents and runner scripts
+
+- The bootstrap experience should be documented in `CONTRIBUTING.md` and should include a one-command developer setup (venv creation, install dev deps, run tests).
+
+## Developer experience
+
+- Devs should be able to run `pytest -q` locally after following `scripts/bootstrap`.
+- Provide `pre-commit` configuration and recommended formatter/linter settings so generated projects have consistent style.
+- Keep runtime optional dependencies out of the fast PR path; split `requirements-dev.txt` and `requirements.txt` so CI can install minimal deps for unit tests.
 
 ## Migration Plan (brief)
 1. Create package skeleton and tests (this step).

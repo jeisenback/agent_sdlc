@@ -35,15 +35,9 @@ class PRReviewAgent:
         )
         text = self.llm.ask_text(prompt)
         # parse JSON in a way that's compatible with pydantic v1 and v2
-        import json
+        from agent_sdlc.core.findings import parse_findings_from_json
 
-        try:
-            from pydantic import parse_raw_as
-
-            findings = parse_raw_as(List[Finding], text)
-        except Exception:
-            payload = json.loads(text)
-            findings = [Finding.parse_obj(item) for item in payload]
+        findings = parse_findings_from_json(text)
         return PRReviewResult(findings=findings)
 
 

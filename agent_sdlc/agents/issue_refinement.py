@@ -32,15 +32,9 @@ class IssueRefinementAgent:
         )
         text = self.llm.ask_text(prompt)
         # parse JSON in a way that's compatible with pydantic v1 and v2
-        import json
+        from agent_sdlc.core.findings import parse_findings_from_json
 
-        try:
-            from pydantic import parse_raw_as
-
-            suggestions = parse_raw_as(List[Finding], text)
-        except Exception:
-            payload = json.loads(text)
-            suggestions = [Finding.parse_obj(item) for item in payload]
+        suggestions = parse_findings_from_json(text)
         return IssueRefinementResult(suggestions=suggestions)
 
 

@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    name: Build artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build sdist and wheel
+        run: |
+          python -m build --sdist --wheel --outdir dist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && secrets.PYPI_API_TOKEN
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+
+      - name: Install twine
+        run: python -m pip install --upgrade pip && pip install twine
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m twine upload dist/*
+
+  create-release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+      - name: Extract release notes from CHANGELOG
+        id: extract
+        run: |
+          set -euo pipefail
+          if [ -f CHANGELOG.md ]; then
+            # extract lines between '## Unreleased' and the next '## ' heading
+            awk 'BEGIN{p=0} /^##[[:space:]]*Unreleased/{p=1; next} /^##[[:space:]]/{p=0} p{print}' CHANGELOG.md > release_body.md || true
+          else
+            echo "No CHANGELOG.md found" >/dev/null
+            printf "" > release_body.md
+          fi
+          # set output (multi-line) for use by subsequent steps
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          cat release_body.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          body: ${{ steps.extract.outputs.body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

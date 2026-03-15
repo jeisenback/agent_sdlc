@@ -1,0 +1,39 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 3 * * *' # daily at 03:00 UTC
+
+jobs:
+  e2e:
+    name: End-to-end tests (manual/nightly)
+    # Gate the e2e job so it only runs automatically when required secrets are configured,
+    # or when manually dispatched. This prevents running heavy e2e tests on forks or when
+    # credentials are missing.
+    if: ${{ secrets.E2E_CREDENTIAL != '' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    env:
+      RUN_E2E: "1"
+    strategy:
+      matrix:
+        python-version: [3.10]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install testcontainers sqlalchemy psycopg2-binary
+
+      - name: Run E2E tests
+        run: |
+          pytest -q tests/e2e

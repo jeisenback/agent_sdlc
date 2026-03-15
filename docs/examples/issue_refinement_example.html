@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Issue Refinement Example</title>
+    <link rel="stylesheet" href="../_static/style.css" />
+  </head>
+  <body>
+    <p><a href="index.html">Back to examples</a> — <a href="../index.html">Back to docs</a></p>
+    <h1>Issue Refinement Example</h1>
+    <p>This page documents the `issue_refinement_example.py` script.</p>
+
+    <h2>What it does</h2>
+    <p>Runs the Issue Refinement agent with a `DummyLLMProvider` to generate proposed tasks and suggestions.</p>
+
+    <h2>How to run</h2>
+    <pre><code>python agent_sdlc/examples/issue_refinement_example.py</code></pre>
+
+    <h2>Sample output</h2>
+    <pre><code>[
+  {
+    "title": "Break into subtasks",
+    "description": "Split the feature into API, frontend, and tests",
+    "severity": "info"
+  }
+]</code></pre>
+
+    <p>See the script: <a href="https://github.com/jeisenback/agent_sdlc/blob/main/agent_sdlc/examples/issue_refinement_example.py" target="_blank" rel="noopener noreferrer">issue_refinement_example.py</a></p>
+  </body>
+</html>
