@@ -51,14 +51,22 @@ class IssueRefinementAgent:
 
     def run(self, inp: IssueInput) -> IssueRefinementResult:
         prompt = (
-            f"Check this issue's Definition of Ready.\n"
+            f"You are a Definition of Ready (DoR) reviewer for software issues.\n"
+            f"Check whether this issue is ready to enter a sprint.\n\n"
             f"Issue title: '{inp.title}'\n"
-            f"Return a JSON array of findings. Each item must have:\n"
-            f"  location (str, e.g. 'body', 'title', 'labels'),\n"
-            f"  severity (blocker|warning|suggestion),\n"
-            f"  rule (str, e.g. 'DoR:ac-count'), message (str), suggestion (str or null).\n"
-            f"Return [] if the issue is ready.\n"
-            f"DESCRIPTION:\n{inp.description}\n"
+            f"Issue description:\n{inp.description}\n\n"
+            f"Return ONLY a raw JSON array — no markdown fences, no prose. Each element:\n"
+            f'{{"location":"body|title|labels|ac","severity":"blocker|warning|suggestion",'
+            f'"rule":"DoR:<rule-id>","message":"<what is wrong>","suggestion":"<how to fix>"}}\n'
+            f"IMPORTANT: all string values must be valid JSON — escape any double-quotes inside strings as \\\".\n\n"
+            f"DoR rules to check:\n"
+            f"  DoR:ac-count      — must have at least 2 acceptance criteria (BLOCKER if missing)\n"
+            f"  DoR:ac-testable   — each AC must be verifiable/measurable (BLOCKER if vague)\n"
+            f"  DoR:scope-clear   — scope must be unambiguous (BLOCKER if unclear)\n"
+            f"  DoR:dependencies  — external dependencies must be named (WARNING if unstated)\n"
+            f"  DoR:size          — issue should be completable in one sprint (WARNING if too large)\n"
+            f"  DoR:title         — title must be specific, not generic (WARNING if vague)\n\n"
+            f"Return [] if all DoR criteria are met."
         )
         text = self.llm.ask_text(prompt)
         findings = parse_findings_from_json(text)
