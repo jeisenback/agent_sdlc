@@ -4,6 +4,7 @@ ruff>=0.2
 black>=23.0
 isort>=5.0
 mypy>=1.9
+pytest-cov>=4.0
 
 # Heavy or optional runtime deps used in examples or integration tests
 pandas>=1.5

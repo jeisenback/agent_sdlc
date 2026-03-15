@@ -11,7 +11,7 @@ except Exception:  # pragma: no cover - optional dependency
     openai = None
 
 
-class OpenAIProviderReal:
+class OpenAIProviderReal:  # pragma: no cover
     """Optional OpenAI provider adapter.
 
     This adapter is lightweight and intentionally tolerant: if the `openai`

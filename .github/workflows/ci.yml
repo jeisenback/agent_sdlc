@@ -48,7 +48,14 @@ jobs:
         run: mypy --strict --ignore-missing-imports agent_sdlc/
 
       - name: Run tests
-        run: python -m pytest -q
+        run: python -m pytest -q --cov=agent_sdlc --cov-report=xml --cov-fail-under=80
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
 
   generator-smoke:
     name: Generator smoke
