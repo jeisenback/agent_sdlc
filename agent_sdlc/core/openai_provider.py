@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Any, Dict, Optional
-import os
 
-from .providers import ProviderResponse, ProviderError
+import os
+from typing import Any, Dict, Optional
+
+from .providers import ProviderError, ProviderResponse
 
 try:
     import openai  # type: ignore
@@ -18,9 +19,13 @@ class OpenAIProviderReal:
     can fall back to `DummyLLMProvider` in tests.
     """
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-3.5-turbo", **kwargs: Any) -> None:
+    def __init__(
+        self, api_key: Optional[str] = None, model: str = "gpt-3.5-turbo", **kwargs: Any
+    ) -> None:
         if openai is None:
-            raise RuntimeError("openai package is not installed. Install openai to use OpenAIProviderReal.")
+            raise RuntimeError(
+                "openai package is not installed. Install openai to use OpenAIProviderReal."
+            )
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise RuntimeError("OPENAI_API_KEY not set and no api_key provided")
@@ -39,14 +44,20 @@ class OpenAIProviderReal:
                 content = resp.choices[0].message.get("content") if resp.choices else ""
             else:
                 # Fallback to older Completion API
-                resp = openai.Completion.create(model=self.model, prompt=prompt, **kwargs)
+                resp = openai.Completion.create(
+                    model=self.model, prompt=prompt, **kwargs
+                )
                 content = resp.choices[0].text if resp.choices else ""
         except Exception as e:
             raise ProviderError(f"OpenAI API error: {e}")
 
         metadata: Dict[str, Any] = {"model": self.model}
         try:
-            usage = getattr(resp, "usage", None) or resp.get("usage") if isinstance(resp, dict) else None
+            usage = (
+                getattr(resp, "usage", None) or resp.get("usage")
+                if isinstance(resp, dict)
+                else None
+            )
         except Exception:
             usage = None
 

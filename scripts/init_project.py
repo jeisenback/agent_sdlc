@@ -7,13 +7,13 @@ The script copies selected template files into `out` and renames the
 `agent_sdlc` package directory to the requested package name, replacing
 occurrences of the template package name in text files.
 """
+
 from __future__ import annotations
+
 import argparse
 import shutil
 from pathlib import Path
 from typing import Iterable
-import json
-
 
 TEMPLATE_PYPROJECT = "pyproject.template.toml"
 
@@ -22,7 +22,9 @@ TEMPLATE_NAME = "agent_sdlc"
 
 
 def copy_tree(src: Path, dest: Path, ignore: Iterable[str] | None = None) -> None:
-    shutil.copytree(src, dest, dirs_exist_ok=True, ignore=shutil.ignore_patterns(*(ignore or [])))
+    shutil.copytree(
+        src, dest, dirs_exist_ok=True, ignore=shutil.ignore_patterns(*(ignore or []))
+    )
 
 
 def replace_in_file(path: Path, old: str, new: str) -> None:
@@ -34,7 +36,17 @@ def replace_in_file(path: Path, old: str, new: str) -> None:
 def is_text_file(path: Path) -> bool:
     try:
         s = path.suffix.lower()
-        return s in {".py", ".md", ".txt", ".toml", ".yml", ".yaml", ".ini", ".cfg", ".json"}
+        return s in {
+            ".py",
+            ".md",
+            ".txt",
+            ".toml",
+            ".yml",
+            ".yaml",
+            ".ini",
+            ".cfg",
+            ".json",
+        }
     except Exception:
         return False
 
@@ -42,12 +54,26 @@ def is_text_file(path: Path) -> bool:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--name", required=True, help="Project name (directory)")
-    p.add_argument("--package", help="Python package name to create (default: project name)")
+    p.add_argument(
+        "--package", help="Python package name to create (default: project name)"
+    )
     p.add_argument("--out", help="Output parent dir (default: .)", default=".")
-    p.add_argument("--include-integration", action="store_true", help="Include integration tests and heavy deps")
-    p.add_argument("--force", action="store_true", help="Overwrite existing output directory")
-    p.add_argument("--author", help="Author name to place into templates", default="Your Name")
-    p.add_argument("--author-email", help="Author email to place into templates", default="you@example.com")
+    p.add_argument(
+        "--include-integration",
+        action="store_true",
+        help="Include integration tests and heavy deps",
+    )
+    p.add_argument(
+        "--force", action="store_true", help="Overwrite existing output directory"
+    )
+    p.add_argument(
+        "--author", help="Author name to place into templates", default="Your Name"
+    )
+    p.add_argument(
+        "--author-email",
+        help="Author email to place into templates",
+        default="you@example.com",
+    )
     p.add_argument("--license", help="License identifier to add (MIT)", default="MIT")
     args = p.parse_args()
 
@@ -57,7 +83,9 @@ def main() -> None:
     dest = out_parent / project_name
 
     if dest.exists() and not args.force:
-        raise SystemExit(f"Destination {dest} already exists. Use --force to overwrite.")
+        raise SystemExit(
+            f"Destination {dest} already exists. Use --force to overwrite."
+        )
 
     template_root = Path(__file__).resolve().parents[1]
 
@@ -67,7 +95,12 @@ def main() -> None:
     dest.mkdir(parents=True, exist_ok=True)
 
     # Files and dirs to copy
-    entries = ["README.md", "CONTRIBUTING.md", "requirements.txt", "requirements-dev.txt"]
+    entries = [
+        "README.md",
+        "CONTRIBUTING.md",
+        "requirements.txt",
+        "requirements-dev.txt",
+    ]
     dirs = [".github", "scripts", "tests"]
 
     for e in entries:
@@ -125,7 +158,9 @@ def main() -> None:
     lic_tpl = template_root / "LICENSE.template.MIT"
     if lic_tpl.exists():
         lic_txt = lic_tpl.read_text(encoding="utf8")
-        lic_txt = lic_txt.replace("{{year}}", str(__import__("datetime").datetime.now().year))
+        lic_txt = lic_txt.replace(
+            "{{year}}", str(__import__("datetime").datetime.now().year)
+        )
         lic_txt = lic_txt.replace("{{author}}", args.author)
         (dest / "LICENSE").write_text(lic_txt, encoding="utf8")
 

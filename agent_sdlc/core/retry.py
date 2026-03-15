@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import Callable, Tuple, Type
-import time
+
 import random
+import time
+from typing import Callable, Tuple, Type
 
 
 def with_retry(
@@ -23,7 +24,7 @@ def with_retry(
             while True:
                 try:
                     return func(*args, **kwargs)
-                except retry_on as exc:
+                except retry_on:
                     attempt += 1
                     if attempt >= max_attempts:
                         raise

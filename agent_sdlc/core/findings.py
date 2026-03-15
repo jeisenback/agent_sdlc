@@ -1,67 +1,124 @@
+"""
+agent_sdlc/core/findings.py
+
+Shared finding types used by all review and quality-gate agents.
+
+Both the PR Review Agent and the Issue Refinement Agent produce findings
+using these types. Centralising them here avoids cross-agent imports and
+provides a consistent schema for any future lifecycle automation.
+
+Usage:
+    from agent_sdlc.core.findings import Finding, FindingSeverity
+"""
+
 from __future__ import annotations
+
+import json
 from enum import Enum
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
-from typing import Any
-import json
-
-# `parse_raw_as` existed in pydantic v1 but was removed in v2; import if available
-try:
-    from pydantic import parse_raw_as  # type: ignore
-except Exception:
-    parse_raw_as = None
 
 
-class Severity(str, Enum):
-    LOW = "LOW"
-    MEDIUM = "MEDIUM"
-    HIGH = "HIGH"
+class FindingSeverity(str, Enum):
+    BLOCKER = "blocker"  # Must be resolved before the gated action proceeds
+    WARNING = "warning"  # Should be addressed; reviewer judgment required
+    SUGGESTION = "suggestion"  # Optional improvement; low priority
 
 
 class Finding(BaseModel):
-    """A portable finding schema used by agents and tests.
+    """A portable finding schema used by review and quality-gate agents."""
 
-    This model includes the simple fields expected by the unit tests
-    (`id`, `title`, `description`, `severity`, `tags`) and a few optional
-    fields useful for richer integrations (`location`, `line_number`).
-    """
-
-    id: Optional[str] = None
-    title: str
-    description: str
-    severity: Severity = Severity.MEDIUM
-    tags: List[str] = Field(default_factory=list)
-
-    # Optional extras for richer consumers
-    location: Optional[str] = None
+    location: str = Field(
+        default="(unspecified)",
+        description="Where the finding applies: file path, field name, or '(diff line)'.",
+    )
     line_number: Optional[int] = None
+    severity: FindingSeverity = FindingSeverity.WARNING
+    rule: str = Field(
+        default="general",
+        description="Short rule identifier, e.g. 'code:type-hints', 'DoR:ac-count'.",
+    )
+    message: str
     suggestion: Optional[str] = None
 
 
-__all__ = ["Finding", "Severity"]
-
-
-def _make_finding(item: Any) -> Finding:
-    """Construct a `Finding` from a mapping, compatible with pydantic v1 and v2.
-
-    Usage: prefer `parse_raw_as(List[Finding], text)` for raw JSON, but fall back
-    to this helper when that isn't available or fails.
-    """
+def _make_finding(item: dict) -> Finding:
+    """Construct a Finding from a raw dict, compatible with pydantic v1 and v2."""
     if hasattr(Finding, "model_validate"):
         return Finding.model_validate(item)
-    return Finding.parse_obj(item)
+    return Finding.parse_obj(item)  # type: ignore[attr-defined]
 
 
-def parse_findings_from_json(text: str) -> list[Finding]:
-    """Parse a JSON array of findings into a list of `Finding` models.
+def parse_findings_from_json(text: str) -> List[Finding]:
+    """Parse a JSON array of findings into a list of Finding models.
 
-    Tries `pydantic.parse_raw_as(List[Finding], ...)` first for v1/v2 compatibility
-    and falls back to `json.loads` + `_make_finding` when needed.
+    Strips markdown code fences (```json ... ``` or ``` ... ```) before
+    parsing so the function is robust to LLM responses that wrap JSON.
     """
-    if parse_raw_as is not None:
-        try:
-            return parse_raw_as(list[Finding], text)
-        except Exception:
-            pass
-    payload = json.loads(text)
+    # Strip markdown code fences if present
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        # drop opening fence line and closing fence line
+        inner = lines[1:] if lines[0].startswith("```") else lines
+        if inner and inner[-1].strip() == "```":
+            inner = inner[:-1]
+        stripped = "\n".join(inner).strip()
+
+    # Extract the outermost JSON array using bracket-depth matching so that
+    # ']' characters inside string values do not truncate the array early.
+    start = stripped.find("[")
+    if start != -1:
+        depth = 0
+        in_string = False
+        escape_next = False
+        end = -1
+        for i, ch in enumerate(stripped[start:], start):
+            if escape_next:
+                escape_next = False
+                continue
+            if ch == "\\" and in_string:
+                escape_next = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        if end != -1:
+            stripped = stripped[start : end + 1]
+
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError:
+        # Last-resort: the model produced invalid JSON (e.g. unescaped inner quotes).
+        # Extract individual objects with a regex so we get partial results rather
+        # than crashing entirely.
+        import logging
+        import re
+
+        logging.getLogger(__name__).warning(
+            "parse_findings_from_json: strict JSON parse failed; attempting object extraction."
+        )
+        # Pull out each {...} block that has at least a "severity" key
+        raw_objects = re.findall(r"\{[^{}]+\}", stripped)
+        payload = []
+        for obj in raw_objects:
+            try:
+                payload.append(json.loads(obj))
+            except json.JSONDecodeError:
+                continue
+        if not payload:
+            return []
     return [_make_finding(item) for item in payload]
+
+
+__all__ = ["Finding", "FindingSeverity", "parse_findings_from_json"]

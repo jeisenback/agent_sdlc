@@ -1,5 +1,6 @@
 """Example: run Issue Refinement agent locally with DummyLLMProvider."""
-from agent_sdlc.agents.issue_refinement import IssueRefinementAgent, IssueInput
+
+from agent_sdlc.agents.issue_refinement import IssueInput, IssueRefinementAgent
 from agent_sdlc.core.providers import DummyLLMProvider
 
 
@@ -12,7 +13,9 @@ def main() -> None:
     # provider = AnthropicProvider(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     agent = IssueRefinementAgent(provider)
-    inp = IssueInput(title="Crash on save", description="Crashes when saving large files")
+    inp = IssueInput(
+        title="Crash on save", description="Crashes when saving large files"
+    )
     out = agent.run(inp)
     print(out.json(indent=2))
 

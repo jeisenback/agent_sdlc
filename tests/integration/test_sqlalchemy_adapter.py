@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 pytestmark = pytest.mark.skipif(
@@ -23,7 +24,9 @@ def test_sqlalchemy_adapter_basic():
         except RuntimeError as e:
             pytest.skip(f"SQLAlchemy not available: {e}")
 
-        adapter.execute("CREATE TABLE IF NOT EXISTS t (id INTEGER PRIMARY KEY, val TEXT)")
+        adapter.execute(
+            "CREATE TABLE IF NOT EXISTS t (id INTEGER PRIMARY KEY, val TEXT)"
+        )
         adapter.execute("INSERT INTO t (val) VALUES (:v)", {"v": "a"})
         rows = adapter.fetchall("SELECT id, val FROM t")
         assert len(rows) >= 1

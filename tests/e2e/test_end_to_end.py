@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 pytestmark = pytest.mark.skipif(
@@ -18,7 +19,9 @@ def test_postgres_integration():
     with PostgresContainer("postgres:15") as pg:
         url = pg.get_connection_url()
         adapter = SqlAlchemyAdapter(url)
-        adapter.execute("CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT)")
+        adapter.execute(
+            "CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT)"
+        )
         adapter.execute("INSERT INTO items (name) VALUES (:n)", {"n": "item1"})
         rows = adapter.fetchall("SELECT id, name FROM items")
         assert any(r[1] == "item1" for r in rows)
