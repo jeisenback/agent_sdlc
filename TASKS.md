@@ -103,3 +103,55 @@ These enhancement items are lower priority than Phase 1–4 but important for lo
     how to invoke locally vs CI.
 36. Add `AGENTS.md` at repo root — one-pager for contributors: which agents exist,
     what they check, how to run them before opening a PR.
+
+## Phase 8 — Expanded agent suite
+
+### Sprint 2 agents (offline-capable with DummyLLMProvider)
+37. **ProcessGapAgent — issue-level** (`agents/process_gap.py`, mode=issue) — runs
+    alongside IssueRefinementAgent. Checks business-side gaps: no stated "why",
+    no success metric, no target user, scope creep risk, no rollback plan.
+    Rules namespace: `biz:`. Runner: `scripts/run_process_gap.py`.
+38. **PromptReviewAgent** (`agents/prompt_review.py`) — reviews LLM prompt strings
+    in `agent_sdlc/agents/**` for quality: format specified, no injection vector,
+    fallback defined, role framing present. Rules namespace: `Prompt:`.
+    CI trigger: PR paths `agent_sdlc/agents/**`. Runner: `scripts/run_prompt_review.py`.
+39. **ProductOwnerAgent** (`agents/product_owner.py`) — backlog-grooming gate (runs
+    before DoR). Checks strategic alignment: value unclear, no target user, unmeasurable
+    success, scope creep, feature overlap. Rules namespace: `PO:`.
+    Runner: `scripts/run_product_owner.py`.
+40. **DiagramAgent** (`agents/diagram.py`) — generates Mermaid diagrams from structured
+    input (agent flow, module deps, sequence, ER). Output embeds directly in GitHub
+    PR/issue comments as ```mermaid blocks. Runner: `scripts/run_diagram.py`.
+
+### Sprint 3 agents (benefits from real LLM)
+41. **ProcessGapAgent — workflow-level** (extend task 37, mode=workflow) — analyses
+    repo-wide process artifacts (CLAUDE.md, CI workflows, CODEOWNERS, issue patterns)
+    for dev workflow gaps: no DoD, no deploy smoke, no incident runbook, no feature
+    flags strategy. Runs weekly via scheduled CI; posts gap report to pinned issue.
+42. **TraceabilityChecker** (`agents/traceability.py`) — supporting agent. Checks the
+    chain: Requirement → Issue → PR → Test → Deploy tag. Flags broken links.
+    Feeds into the workflow-level ProcessGapAgent report.
+43. **UXAgent** (`agents/ux.py`) — reviews user flow descriptions for friction: no
+    error state, no success feedback, dead ends, ambiguous CTAs, missing undo on
+    destructive actions. Input: prose flow + user goal. Rules namespace: `UX:`.
+    Runner: `scripts/run_ux.py`.
+
+### Sprint 5 agents (specialized / polish)
+44. **UIDesignAgent** (`agents/ui_design.py`) — reviews UI source (HTML/JSX/CSS) or
+    design specs for visual consistency and accessibility: color contrast (WCAG AA),
+    hardcoded colors/spacing outside design tokens, missing alt text, responsive gaps.
+    Rules namespace: `UI:`. Runner: `scripts/run_ui_design.py`.
+
+### Supporting infrastructure (Sprint 3)
+45. **FindingAggregator** (`agents/finding_aggregator.py`) — merges Finding lists from
+    multiple agents, deduplicates, resolves severity conflicts, produces one unified
+    comment. Required once 3+ review agents post to the same PR.
+46. **IssueLinker** supporting agent — given a set of findings, searches open GitHub
+    issues for related ones and appends links. Prevents duplicate work.
+47. `/process-gaps` Claude skill — runs ProcessGapAgent (workflow-level) locally
+    against the current repo. File: `.claude/skills/process-gaps.md`.
+
+### Sprint 4 supporting (ops)
+48. **SprintHealthReporter** — weekly scheduled job: counts open blockers across
+    milestone issues, flags stale issues (no activity > 7 days), posts summary to
+    a pinned GitHub issue. Uses `gh` CLI; no LLM required.

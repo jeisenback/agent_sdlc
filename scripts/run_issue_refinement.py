@@ -74,7 +74,7 @@ def _print_result(result, issue_number: int | None = None) -> None:
         print(f"  [{sym}] {f.rule} @ {f.location}")
         print(f"     {f.message}")
         if f.suggestion:
-            print(f"     → {f.suggestion}")
+            print(f"     -> {f.suggestion}")
     if not result.findings:
         print("  No findings — issue is DoR ready.")
     print("=" * 70 + "\n")

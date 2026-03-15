@@ -51,8 +51,28 @@ def _make_finding(item: dict) -> Finding:
 
 
 def parse_findings_from_json(text: str) -> List[Finding]:
-    """Parse a JSON array of findings into a list of Finding models."""
-    payload = json.loads(text)
+    """Parse a JSON array of findings into a list of Finding models.
+
+    Strips markdown code fences (```json ... ``` or ``` ... ```) before
+    parsing so the function is robust to LLM responses that wrap JSON.
+    """
+    # Strip markdown code fences if present
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        # drop opening fence line and closing fence line
+        inner = lines[1:] if lines[0].startswith("```") else lines
+        if inner and inner[-1].strip() == "```":
+            inner = inner[:-1]
+        stripped = "\n".join(inner).strip()
+
+    # Extract the JSON array in case there is leading/trailing prose
+    start = stripped.find("[")
+    end = stripped.rfind("]")
+    if start != -1 and end != -1 and end > start:
+        stripped = stripped[start : end + 1]
+
+    payload = json.loads(stripped)
     return [_make_finding(item) for item in payload]
 
 
