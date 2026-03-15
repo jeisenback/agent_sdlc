@@ -137,11 +137,13 @@ def main() -> int:
             logger.error("Failed to fetch PR #%d: %s", args.pr, exc)
             return 1
     else:
-        # Local demo mode
-        inp = PRReviewInput(
-            title="Demo PR",
-            diff="+ import anthropic\n+ def foo(): pass",
-        )
+        # Local mode: diff current branch against main
+        try:
+            diff = _run(["git", "diff", "main...HEAD"])
+        except Exception:
+            diff = _run(["git", "diff", "HEAD"], check=False)
+        branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=False)
+        inp = PRReviewInput(title=f"Local review — {branch}", diff=diff)
 
     provider = _build_provider()
     agent = PRReviewAgent(provider)
