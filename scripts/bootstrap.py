@@ -21,20 +21,21 @@ def main() -> None:
     if not venv_dir.exists():
         run([sys.executable, "-m", "venv", str(venv_dir)])
 
-    pip = str(venv_dir / "Scripts" / "pip") if (venv_dir / "Scripts").exists() else str(venv_dir / "bin" / "pip")
+    # Prefer calling the venv Python and using "-m pip" to avoid pip-binary issues
+    venv_python = str(venv_dir / "Scripts" / "python") if (venv_dir / "Scripts").exists() else str(venv_dir / "bin" / "python")
 
-    run([pip, "install", "--upgrade", "pip"])
+    run([venv_python, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"])
     if (ROOT / "requirements.txt").exists():
-        run([pip, "install", "-r", "requirements.txt"])
+        run([venv_python, "-m", "pip", "install", "-r", "requirements.txt"])
     if (ROOT / "requirements-dev.txt").exists():
-        run([pip, "install", "-r", "requirements-dev.txt"])
+        run([venv_python, "-m", "pip", "install", "-r", "requirements-dev.txt"])
 
-    # install pre-commit hooks
-    run([pip, "install", "pre-commit"])
-    run([str(venv_dir / "Scripts" / "pre-commit") if (venv_dir / "Scripts").exists() else str(venv_dir / "bin" / "pre-commit"), "install"])  # type: ignore[arg-type]
+    # install pre-commit hooks (via the venv Python)
+    run([venv_python, "-m", "pip", "install", "pre-commit"])
+    run([venv_python, "-m", "pre_commit", "install"])
 
-    # Run the test suite
-    run([str(venv_dir / "Scripts" / "python") if (venv_dir / "Scripts").exists() else str(venv_dir / "bin" / "python"), "-m", "pytest", "-q"])
+    # Run the test suite via the venv Python
+    run([venv_python, "-m", "pytest", "-q"])
 
 
 if __name__ == "__main__":
