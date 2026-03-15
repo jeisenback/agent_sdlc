@@ -2,6 +2,10 @@
 
 1. Bootstrap the repository (creates a venv, installs dev deps, and runs tests):
 
+# Getting Started
+
+1. Bootstrap the repository (creates a venv, installs dev deps, and runs tests):
+
 ```bash
 python scripts/bootstrap.py
 ```
