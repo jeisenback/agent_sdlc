@@ -4,8 +4,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from agent_sdlc.core.findings import (Finding, FindingSeverity,
-                                      parse_findings_from_json)
+from agent_sdlc.core.findings import Finding, FindingSeverity, parse_findings_from_json
 from agent_sdlc.core.llm_wrapper import LLMWrapper
 from agent_sdlc.core.providers import ProviderProtocol
 
