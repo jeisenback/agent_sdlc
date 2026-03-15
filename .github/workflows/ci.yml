@@ -57,6 +57,34 @@ jobs:
           name: coverage-${{ matrix.python-version }}
           path: coverage.xml
 
+  prompt-review:
+    name: Prompt quality gate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Review agent prompts
+        run: |
+          exit_code=0
+          for f in agent_sdlc/agents/*.py; do
+            python scripts/run_prompt_review.py --file "$f" || exit_code=1
+          done
+          exit $exit_code
+
   generator-smoke:
     name: Generator smoke
     runs-on: ubuntu-latest
