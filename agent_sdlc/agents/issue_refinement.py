@@ -4,7 +4,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from agent_sdlc.core.findings import Finding, FindingSeverity, parse_findings_from_json
+from agent_sdlc.core.findings import (Finding, FindingSeverity,
+                                      parse_findings_from_json)
 from agent_sdlc.core.llm_wrapper import LLMWrapper
 from agent_sdlc.core.providers import ProviderProtocol
 
@@ -58,7 +59,7 @@ class IssueRefinementAgent:
             f"Return ONLY a raw JSON array — no markdown fences, no prose. Each element:\n"
             f'{{"location":"body|title|labels|ac","severity":"blocker|warning|suggestion",'
             f'"rule":"DoR:<rule-id>","message":"<what is wrong>","suggestion":"<how to fix>"}}\n'
-            f"IMPORTANT: all string values must be valid JSON — escape any double-quotes inside strings as \\\".\n\n"
+            f'IMPORTANT: all string values must be valid JSON — escape any double-quotes inside strings as \\".\n\n'
             f"DoR rules to check:\n"
             f"  DoR:ac-count      — must have at least 2 acceptance criteria (BLOCKER if missing)\n"
             f"  DoR:ac-testable   — each AC must be verifiable/measurable (BLOCKER if vague)\n"

@@ -13,16 +13,16 @@ Usage:
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Optional, List
 import json
+from enum import Enum
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 
 class FindingSeverity(str, Enum):
-    BLOCKER = "blocker"     # Must be resolved before the gated action proceeds
-    WARNING = "warning"     # Should be addressed; reviewer judgment required
+    BLOCKER = "blocker"  # Must be resolved before the gated action proceeds
+    WARNING = "warning"  # Should be addressed; reviewer judgment required
     SUGGESTION = "suggestion"  # Optional improvement; low priority
 
 
@@ -102,13 +102,14 @@ def parse_findings_from_json(text: str) -> List[Finding]:
         # Last-resort: the model produced invalid JSON (e.g. unescaped inner quotes).
         # Extract individual objects with a regex so we get partial results rather
         # than crashing entirely.
-        import re
         import logging
+        import re
+
         logging.getLogger(__name__).warning(
             "parse_findings_from_json: strict JSON parse failed; attempting object extraction."
         )
         # Pull out each {...} block that has at least a "severity" key
-        raw_objects = re.findall(r'\{[^{}]+\}', stripped)
+        raw_objects = re.findall(r"\{[^{}]+\}", stripped)
         payload = []
         for obj in raw_objects:
             try:

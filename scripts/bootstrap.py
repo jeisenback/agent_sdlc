@@ -2,11 +2,12 @@
 
 Usage: python scripts/bootstrap.py
 """
+
 from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,9 +23,15 @@ def main() -> None:
         run([sys.executable, "-m", "venv", str(venv_dir)])
 
     # Prefer calling the venv Python and using "-m pip" to avoid pip-binary issues
-    venv_python = str(venv_dir / "Scripts" / "python") if (venv_dir / "Scripts").exists() else str(venv_dir / "bin" / "python")
+    venv_python = (
+        str(venv_dir / "Scripts" / "python")
+        if (venv_dir / "Scripts").exists()
+        else str(venv_dir / "bin" / "python")
+    )
 
-    run([venv_python, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"])
+    run(
+        [venv_python, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"]
+    )
     if (ROOT / "requirements.txt").exists():
         run([venv_python, "-m", "pip", "install", "-r", "requirements.txt"])
     if (ROOT / "requirements-dev.txt").exists():

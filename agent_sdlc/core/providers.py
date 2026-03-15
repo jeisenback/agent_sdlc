@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Protocol, Any, Dict, Optional, runtime_checkable
+
+import time
 from dataclasses import dataclass
 from datetime import datetime
-import time
+from typing import Any, Dict, Optional, Protocol, runtime_checkable
 
 
 @dataclass
@@ -34,7 +35,12 @@ class DummyLLMProvider:
         latency: artificial latency (seconds) to simulate network calls
     """
 
-    def __init__(self, responses: Optional[Dict[str, str]] = None, default: str = "OK", latency: float = 0.0):
+    def __init__(
+        self,
+        responses: Optional[Dict[str, str]] = None,
+        default: str = "OK",
+        latency: float = 0.0,
+    ):
         self.responses = responses or {}
         self.default = default
         self.latency = float(latency)

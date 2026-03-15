@@ -25,7 +25,9 @@ def test_init_project_creates_pyproject(tmp_path):
     ]
     res = subprocess.run(cmd, check=False, capture_output=True, text=True)
     if res.returncode != 0:
-        raise AssertionError(f"init_project failed: {res.returncode}\nstdout:\n{res.stdout}\nstderr:\n{res.stderr}")
+        raise AssertionError(
+            f"init_project failed: {res.returncode}\nstdout:\n{res.stdout}\nstderr:\n{res.stderr}"
+        )
 
     project_dir = out / project_name
     assert project_dir.exists()

@@ -1,4 +1,4 @@
-from agent_sdlc.agents.issue_refinement import IssueRefinementAgent, IssueInput
+from agent_sdlc.agents.issue_refinement import IssueInput, IssueRefinementAgent
 from agent_sdlc.core.findings import FindingSeverity
 from agent_sdlc.core.providers import DummyLLMProvider
 
@@ -6,7 +6,9 @@ from agent_sdlc.core.providers import DummyLLMProvider
 def test_issue_refinement_ready_when_no_findings():
     provider = DummyLLMProvider(default="[]")
     agent = IssueRefinementAgent(provider)
-    inp = IssueInput(title="Add retry logic", description="- [ ] impl\n- [ ] test\n- [ ] docs")
+    inp = IssueInput(
+        title="Add retry logic", description="- [ ] impl\n- [ ] test\n- [ ] docs"
+    )
     res = agent.run(inp)
     assert res.findings == []
     assert res.ready is True
@@ -20,7 +22,9 @@ def test_issue_refinement_parses_suggestions():
     )
     provider = DummyLLMProvider(default=sample)
     agent = IssueRefinementAgent(provider)
-    inp = IssueInput(title="Crash on save", description="Crashes when saving large files")
+    inp = IssueInput(
+        title="Crash on save", description="Crashes when saving large files"
+    )
     res = agent.run(inp)
     assert len(res.findings) == 1
     f = res.findings[0]
@@ -44,10 +48,10 @@ def test_issue_refinement_blocker_not_ready():
 
 def test_issue_refinement_findings_sorted_blockers_first():
     sample = (
-        '['
+        "["
         '{"location":"labels","severity":"warning","rule":"DoR:label-type","message":"No type label"},'
         '{"location":"body","severity":"blocker","rule":"DoR:ac-count","message":"No AC items"}'
-        ']'
+        "]"
     )
     provider = DummyLLMProvider(default=sample)
     agent = IssueRefinementAgent(provider)

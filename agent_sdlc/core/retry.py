@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import Callable, Tuple, Type
-import time
+
 import random
+import time
+from typing import Callable, Tuple, Type
 
 
 def with_retry(

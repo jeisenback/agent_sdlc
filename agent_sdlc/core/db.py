@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Protocol, Iterable, List, Tuple, Optional, ContextManager
+
 import sqlite3
 import threading
 from contextlib import contextmanager
+from typing import ContextManager, Iterable, List, Optional, Protocol, Tuple
 
 
 class DBAdapter(Protocol):
@@ -33,7 +34,9 @@ class SqliteAdapter:
 
     def connect(self) -> None:
         if self._conn is None:
-            self._conn = sqlite3.connect(self.url, check_same_thread=False, timeout=self.timeout)
+            self._conn = sqlite3.connect(
+                self.url, check_same_thread=False, timeout=self.timeout
+            )
             self._conn.row_factory = sqlite3.Row
 
     def execute(self, sql: str, params: Optional[Iterable] = None) -> int:

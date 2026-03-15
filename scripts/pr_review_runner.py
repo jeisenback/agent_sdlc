@@ -12,6 +12,7 @@ Exit codes:
   0 — approved (zero BLOCKER findings)
   1 — one or more BLOCKER findings
 """
+
 from __future__ import annotations
 
 import argparse

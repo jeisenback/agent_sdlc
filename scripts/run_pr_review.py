@@ -22,7 +22,9 @@ from agent_sdlc.agents.pr_review import PRReviewAgent, PRReviewInput
 from agent_sdlc.core.findings import FindingSeverity
 from agent_sdlc.core.providers import DummyLLMProvider, ProviderProtocol
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s — %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s — %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 _SEVERITY_SYMBOL = {
@@ -39,15 +41,23 @@ def _run(cmd: list[str], check: bool = True) -> str:
 
 def _fetch_pr(pr_number: int) -> PRReviewInput:
     logger.info("Fetching PR #%d via gh CLI...", pr_number)
-    meta_json = _run([
-        "gh", "pr", "view", str(pr_number),
-        "--json", "number,title,body,baseRefName,headRefName,author,files",
-    ])
+    meta_json = _run(
+        [
+            "gh",
+            "pr",
+            "view",
+            str(pr_number),
+            "--json",
+            "number,title,body,baseRefName,headRefName,author,files",
+        ]
+    )
     meta = json.loads(meta_json)
     try:
         diff = _run(["gh", "pr", "diff", str(pr_number)])
     except subprocess.CalledProcessError:
-        logger.warning("Could not fetch diff for PR #%d — proceeding without it.", pr_number)
+        logger.warning(
+            "Could not fetch diff for PR #%d — proceeding without it.", pr_number
+        )
         diff = ""
     return PRReviewInput(
         title=meta["title"],
@@ -59,12 +69,16 @@ def _fetch_pr(pr_number: int) -> PRReviewInput:
 def _build_provider() -> ProviderProtocol:
     """Return a real provider if credentials are available, else DummyLLMProvider."""
     import os
+
     if os.environ.get("ANTHROPIC_API_KEY"):
         try:
             from agent_sdlc.core.anthropic_provider import AnthropicProvider
+
             return AnthropicProvider()
         except Exception as exc:
-            logger.warning("Could not load AnthropicProvider (%s) — using DummyLLMProvider.", exc)
+            logger.warning(
+                "Could not load AnthropicProvider (%s) — using DummyLLMProvider.", exc
+            )
     return DummyLLMProvider(default="[]")
 
 
@@ -72,8 +86,10 @@ def _print_result(result) -> None:
     print("\n" + "=" * 70)
     print(f"PR Review — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"Status: {'APPROVED (no blockers)' if result.approved else 'BLOCKED'}")
-    print(f"Findings: {result.blocker_count} blocker(s), {result.warning_count} warning(s), "
-          f"{result.suggestion_count} suggestion(s)")
+    print(
+        f"Findings: {result.blocker_count} blocker(s), {result.warning_count} warning(s), "
+        f"{result.suggestion_count} suggestion(s)"
+    )
     print("=" * 70)
     for f in result.findings:
         sym = _SEVERITY_SYMBOL[f.severity]
@@ -124,7 +140,7 @@ def main() -> int:
         # Local demo mode
         inp = PRReviewInput(
             title="Demo PR",
-            diff='+ import anthropic\n+ def foo(): pass',
+            diff="+ import anthropic\n+ def foo(): pass",
         )
 
     provider = _build_provider()

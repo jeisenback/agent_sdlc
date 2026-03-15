@@ -22,7 +22,9 @@ from agent_sdlc.agents.issue_refinement import IssueInput, IssueRefinementAgent
 from agent_sdlc.core.findings import FindingSeverity
 from agent_sdlc.core.providers import DummyLLMProvider, ProviderProtocol
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s — %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s — %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 _SEVERITY_SYMBOL = {
@@ -42,10 +44,16 @@ _BODY_CHAR_LIMIT = 3000  # keep prompts short enough for reliable JSON responses
 
 def _fetch_issue(issue_number: int) -> IssueInput:
     logger.info("Fetching issue #%d via gh CLI...", issue_number)
-    meta_json = _run([
-        "gh", "issue", "view", str(issue_number),
-        "--json", "number,title,body,labels,milestone,assignees,state",
-    ])
+    meta_json = _run(
+        [
+            "gh",
+            "issue",
+            "view",
+            str(issue_number),
+            "--json",
+            "number,title,body,labels,milestone,assignees,state",
+        ]
+    )
     meta = json.loads(meta_json)
     body = meta.get("body") or ""
     if len(body) > _BODY_CHAR_LIMIT:
@@ -58,12 +66,16 @@ def _fetch_issue(issue_number: int) -> IssueInput:
 
 def _build_provider() -> ProviderProtocol:
     import os
+
     if os.environ.get("ANTHROPIC_API_KEY"):
         try:
             from agent_sdlc.core.anthropic_provider import AnthropicProvider
+
             return AnthropicProvider()
         except Exception as exc:
-            logger.warning("Could not load AnthropicProvider (%s) — using DummyLLMProvider.", exc)
+            logger.warning(
+                "Could not load AnthropicProvider (%s) — using DummyLLMProvider.", exc
+            )
     return DummyLLMProvider(default="[]")
 
 
@@ -72,8 +84,10 @@ def _print_result(result, issue_number: int | None = None) -> None:
     print("\n" + "=" * 70)
     print(f"{label} DoR Check — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"Status: {'READY' if result.ready else 'NOT READY'}")
-    print(f"Findings: {result.blocker_count} blocker(s), {result.warning_count} warning(s), "
-          f"{result.suggestion_count} suggestion(s)")
+    print(
+        f"Findings: {result.blocker_count} blocker(s), {result.warning_count} warning(s), "
+        f"{result.suggestion_count} suggestion(s)"
+    )
     print("=" * 70)
     for f in result.findings:
         sym = _SEVERITY_SYMBOL[f.severity]
@@ -98,7 +112,9 @@ def _post_comment(issue_number: int, result) -> None:
         lines.append("|----------|----------|------|---------|")
         for f in result.findings:
             msg = f.message.replace("|", "\\|")
-            lines.append(f"| {f.severity.value} | `{f.location}` | `{f.rule}` | {msg} |")
+            lines.append(
+                f"| {f.severity.value} | `{f.location}` | `{f.rule}` | {msg} |"
+            )
     else:
         lines.append("_No findings._")
     body = "\n".join(lines)
@@ -108,14 +124,31 @@ def _post_comment(issue_number: int, result) -> None:
 
 def _update_labels(issue_number: int, ready: bool) -> None:
     if ready:
-        _run(["gh", "issue", "edit", str(issue_number), "--remove-label", "needs-review"], check=False)
+        _run(
+            [
+                "gh",
+                "issue",
+                "edit",
+                str(issue_number),
+                "--remove-label",
+                "needs-review",
+            ],
+            check=False,
+        )
     else:
-        _run(["gh", "issue", "edit", str(issue_number), "--add-label", "blocked"], check=False)
+        _run(
+            ["gh", "issue", "edit", str(issue_number), "--add-label", "blocked"],
+            check=False,
+        )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run the Issue Refinement Agent (DoR check).")
-    parser.add_argument("--issue", type=int, metavar="NUMBER", help="GitHub issue number")
+    parser = argparse.ArgumentParser(
+        description="Run the Issue Refinement Agent (DoR check)."
+    )
+    parser.add_argument(
+        "--issue", type=int, metavar="NUMBER", help="GitHub issue number"
+    )
     parser.add_argument("--post-comment", action="store_true")
     parser.add_argument("--update-labels", action="store_true")
     args = parser.parse_args()

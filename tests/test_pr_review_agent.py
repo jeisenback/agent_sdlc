@@ -46,10 +46,10 @@ def test_pr_review_blocker_fails_approval():
 
 def test_pr_review_findings_sorted_blockers_first():
     sample = (
-        '['
+        "["
         '{"location":"a.py","severity":"suggestion","rule":"style","message":"minor"},'
         '{"location":"b.py","severity":"blocker","rule":"code:no-direct-sdk","message":"critical"}'
-        ']'
+        "]"
     )
     provider = DummyLLMProvider(default=sample)
     agent = PRReviewAgent(provider)

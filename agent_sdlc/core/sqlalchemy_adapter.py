@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import Iterable, List, Tuple, Optional, ContextManager
+
 from contextlib import contextmanager
+from typing import ContextManager, Iterable, List, Optional, Tuple
 
 try:
     from sqlalchemy import create_engine, text
@@ -23,7 +24,9 @@ class SqlAlchemyAdapter:
 
     def __init__(self, url: str = "sqlite:///:memory:", **engine_kwargs) -> None:
         if create_engine is None:
-            raise RuntimeError("SQLAlchemy is not installed. Install sqlalchemy to use SqlAlchemyAdapter.")
+            raise RuntimeError(
+                "SQLAlchemy is not installed. Install sqlalchemy to use SqlAlchemyAdapter."
+            )
         self.url = url
         self._engine: Engine = create_engine(url, **engine_kwargs)
 
