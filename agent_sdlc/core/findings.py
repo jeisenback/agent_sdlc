@@ -47,7 +47,7 @@ def _make_finding(item: Dict[str, Any]) -> Finding:
     """Construct a Finding from a raw dict, compatible with pydantic v1 and v2."""
     if hasattr(Finding, "model_validate"):
         return Finding.model_validate(item)
-    return Finding.parse_obj(item)  # pydantic v1 compat
+    return Finding(**item)  # pydantic v1 compat
 
 
 def parse_findings_from_json(text: str) -> List[Finding]:
