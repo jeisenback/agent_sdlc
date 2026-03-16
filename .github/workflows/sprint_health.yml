@@ -1,0 +1,45 @@
+name: Sprint Health Reporter
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      health_issue:
+        description: "Sprint Health Dashboard issue number"
+        required: false
+        default: ""
+
+jobs:
+  sprint-health:
+    name: Sprint health digest
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Run sprint health report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HEALTH_ISSUE_NUMBER: ${{ secrets.HEALTH_ISSUE_NUMBER || inputs.health_issue }}
+        run: |
+          if [ -n "$HEALTH_ISSUE_NUMBER" ]; then
+            python scripts/run_sprint_health.py --post-comment --health-issue "$HEALTH_ISSUE_NUMBER"
+          else
+            python scripts/run_sprint_health.py
+          fi
