@@ -1,0 +1,64 @@
+name: Agent Health Monitor — Weekly Quality Report
+
+on:
+  schedule:
+    # Every Monday at 09:30 UTC (after SprintHealthReporter at 09:00)
+    - cron: "30 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      health_issue:
+        description: "Sprint Health Dashboard issue number"
+        required: false
+        default: ""
+      days:
+        description: "Analysis window in days"
+        required: false
+        default: "30"
+
+jobs:
+  agent-health:
+    name: Agent health quality report
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Run agent health report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HEALTH_ISSUE_NUMBER: ${{ secrets.HEALTH_ISSUE_NUMBER || inputs.health_issue }}
+        run: |
+          DAYS="${{ inputs.days || '30' }}"
+          if [ -n "$HEALTH_ISSUE_NUMBER" ]; then
+            python scripts/run_agent_health.py \
+              --days "$DAYS" \
+              --post-comment \
+              --health-issue "$HEALTH_ISSUE_NUMBER" \
+              --out agent_health_report.json
+          else
+            python scripts/run_agent_health.py \
+              --days "$DAYS" \
+              --out agent_health_report.json
+          fi
+
+      - name: Upload JSON artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-health-report-${{ github.run_number }}
+          path: agent_health_report.json
+          retention-days: 90
