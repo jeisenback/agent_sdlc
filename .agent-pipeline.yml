@@ -1,0 +1,58 @@
+# .agent-pipeline.yml — Pipeline Orchestrator configuration
+#
+# Maps GitHub event triggers to ordered agent sequences.
+# Each pipeline defines steps that run in parallel or sequential order.
+# All findings are routed through FindingAggregator for a unified output.
+#
+# Step types:
+#   parallel  — agents run concurrently; findings collected after all finish
+#   sequential — agents run in order; each can consume upstream findings
+#   always     — runs regardless of prior step outcomes (e.g. aggregator)
+#
+# Agent-level options:
+#   consumes_upstream: true  — receives upstream *.findings.json
+#   trigger_on: blocker_present — only runs if upstream has blockers
+#   on_failure: continue|abort — behaviour when agent exits non-zero
+
+pipelines:
+  pull_request:
+    triggers:
+      - event: pull_request
+        actions: [opened, synchronize, reopened]
+    steps:
+      - parallel:
+          - agent: pr_review
+          - agent: arch_review
+            on_failure: continue
+      - sequential:
+          - agent: reasoning_check
+            consumes_upstream: true
+            trigger_on: blocker_present
+            on_failure: continue
+      - always:
+          - agent: finding_aggregator
+
+  issue:
+    triggers:
+      - event: issues
+        actions: [opened, edited]
+    steps:
+      - parallel:
+          - agent: issue_refinement
+          - agent: product_owner
+            on_failure: continue
+      - always:
+          - agent: finding_aggregator
+
+  agent_review:
+    triggers:
+      - event: pull_request
+        actions: [opened, synchronize]
+        paths:
+          - "agent_sdlc/agents/**"
+    steps:
+      - sequential:
+          - agent: agent_review
+            mode: individual
+      - always:
+          - agent: finding_aggregator
