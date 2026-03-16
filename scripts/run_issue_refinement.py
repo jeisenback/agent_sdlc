@@ -64,6 +64,20 @@ def _fetch_issue(issue_number: int) -> IssueInput:
     )
 
 
+def _check_gh_cli() -> None:
+    """Exit 1 with a clear message if gh CLI is absent or unauthenticated."""
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print("gh CLI not available or not authenticated", file=sys.stderr)
+            sys.exit(1)
+    except FileNotFoundError:
+        print("gh CLI not available or not authenticated", file=sys.stderr)
+        sys.exit(1)
+
+
 def _build_provider() -> ProviderProtocol:
     import os
 
@@ -76,6 +90,7 @@ def _build_provider() -> ProviderProtocol:
             logger.warning(
                 "Could not load AnthropicProvider (%s) — using DummyLLMProvider.", exc
             )
+    print("[INFO] No API key — using DummyLLMProvider", file=sys.stderr)
     return DummyLLMProvider(default="[]")
 
 
@@ -91,8 +106,7 @@ def _print_result(result, issue_number: int | None = None) -> None:
     print("=" * 70)
     for f in result.findings:
         sym = _SEVERITY_SYMBOL[f.severity]
-        print(f"  [{sym}] {f.rule} @ {f.location}")
-        print(f"     {f.message}")
+        print(f"[{sym}] DoR:{f.rule} @ {f.location}: {f.message}")
         if f.suggestion:
             print(f"     -> {f.suggestion}")
     if not result.findings:
@@ -154,6 +168,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.issue:
+        _check_gh_cli()
         try:
             inp = _fetch_issue(args.issue)
         except Exception as exc:
