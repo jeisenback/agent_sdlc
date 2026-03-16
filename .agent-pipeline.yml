@@ -1,0 +1,35 @@
+pipelines:
+  pull_request:
+    steps:
+      - parallel:
+          - agent: arch_review
+            on_failure: continue
+          - agent: prompt_review
+            paths: ["agent_sdlc/agents/**"]
+            on_failure: continue
+          - agent: assumption_checker
+            on_failure: continue
+      - sequential:
+          - agent: pr_review
+            on_failure: abort
+      - always:
+          - agent: finding_aggregator
+          - agent: diagram
+            type: agentFlow
+            on_failure: continue
+
+  issues_opened:
+    steps:
+      - sequential:
+          - agent: product_owner
+            on_failure: continue
+          - agent: process_gap
+            mode: issue
+            on_failure: continue
+          - agent: issue_refinement
+            on_failure: continue
+
+  issues_labeled_bug:
+    steps:
+      - sequential:
+          - agent: rca
