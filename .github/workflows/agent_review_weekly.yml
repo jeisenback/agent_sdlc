@@ -1,0 +1,67 @@
+name: AgentReview System — Weekly Catalog Audit
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      health_issue:
+        description: "Sprint Health Dashboard issue number"
+        required: false
+        default: ""
+
+jobs:
+  agent-review-system:
+    name: System-level agent catalog review
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Run system-level agent review
+        id: review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/run_agent_review.py --mode system > review_output.txt 2>&1
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          cat review_output.txt
+
+      - name: Post findings to Sprint Health Dashboard
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEALTH_ISSUE_NUMBER: ${{ secrets.HEALTH_ISSUE_NUMBER || inputs.health_issue }}
+        run: |
+          if [ -n "$HEALTH_ISSUE_NUMBER" ]; then
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+            BODY="## Agent Catalog Review — ${TIMESTAMP}
+
+          \`\`\`
+          $(cat review_output.txt)
+          \`\`\`"
+            gh issue comment "$HEALTH_ISSUE_NUMBER" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body "$BODY"
+          fi
+
+      - name: Fail if BLOCKERs found
+        if: steps.review.outputs.exit_code != '0'
+        run: |
+          echo "AgentReview system check found BLOCKER findings."
+          exit 1
