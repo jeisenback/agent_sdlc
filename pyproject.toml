@@ -5,7 +5,7 @@ description = "Agent-assisted SDLC utilities: LLM providers, adapters, and agent
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "pydantic>=1.10,<2",
+  "pydantic>=2.13.3,<3",
   "typing-extensions>=4.0",
 ]
 
