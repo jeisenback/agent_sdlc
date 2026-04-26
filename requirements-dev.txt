@@ -6,7 +6,7 @@ isort>=5.0
 
 # Heavy or optional runtime deps used in examples or integration tests
 pandas>=1.5
-numpy>=1.24
+numpy>=2.2.6
 psycopg2-binary>=2.9
 testcontainers>=3.4
 SQLAlchemy>=1.4
